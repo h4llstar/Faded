@@ -6,23 +6,6 @@ local Window = Library:Load({name = "FF2 QB Aimbot", sizeX = 460, sizeY = 500, c
 local MainTab = Window:Tab("QB Aimbot")
 local AimSection = MainTab:Section{name = "Throw Assist", column = 1}
 
-local beamPart
-
-local function createBeam(startPos, endPos)
-	if beamPart then beamPart:Destroy() end
-
-	beamPart = Instance.new("Part")
-	beamPart.Anchored = true
-	beamPart.CanCollide = false
-	beamPart.Transparency = 0.6
-	beamPart.Color = Color3.fromRGB(0, 255, 100)
-	beamPart.Material = Enum.Material.Neon
-	beamPart.Size = Vector3.new(0.25, 0.25, (startPos - endPos).Magnitude)
-	beamPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -beamPart.Size.Z / 2)
-	beamPart.Parent = workspace
-end
-
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -78,19 +61,6 @@ AimSection:Toggle{
 	end
 }
 
-AimSection:Toggle{
-	Name = "Show Beam",
-	flag = "beam_visual",
-	callback = function(val)
-		config.showBeam = val
-		if not val and beamPart then
-			beamPart:Destroy()
-			beamPart = nil
-		end
-	end
-}
-
-
 local function calculatePower(dist)
 	local multiplier = ({
 		Bullet = 1.3,
@@ -109,11 +79,6 @@ RunService.RenderStepped:Connect(function()
 	local predict = hrp.Position + (hrp.Velocity * 0.14)
 	local dist = (predict - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
 
-  if config.showBeam then
-	createBeam(LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 2.5, 0), predict)
-end
-
-    
 	Mouse.TargetFilter = workspace
 	Mouse.Hit = CFrame.new(predict)
 
