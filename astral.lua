@@ -19,13 +19,13 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
     Legit = Window:AddTab("Legit"),
-    Ragebot = Window:AddTab("Ragebot")
+    Ragebot = Window:AddTab("Ragebot"),
     Settings = Window:AddTab("Settings")
 }
 
 local MainGroup = Tabs.Legit:AddLeftGroupbox("Main")
 local ESPGroup = Tabs.Legit:AddRightGroupbox("ESP")
-local RagebotGroup = Tabs.Ragebot:AddLeftGroupbox("Ragebot")
+local RageGroup = Tabs.Ragebot:AddLeftGroupbox("Ragebot")
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("UI Settings")
 
 getgenv().Settings = {
