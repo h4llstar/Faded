@@ -19,11 +19,13 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
     Legit = Window:AddTab("Legit"),
+    Ragebot = Window:AddTab("Ragebot")
     Settings = Window:AddTab("Settings")
 }
 
 local MainGroup = Tabs.Legit:AddLeftGroupbox("Main")
 local ESPGroup = Tabs.Legit:AddRightGroupbox("ESP")
+local RagebotGroup = Tabs.Ragebot:AddLeftGroupbox("Ragebot")
 local SettingsGroup = Tabs.Settings:AddLeftGroupbox("UI Settings")
 
 getgenv().Settings = {
@@ -34,6 +36,8 @@ getgenv().Settings = {
     Hitbox = false,
     HitboxSize = 8,
     HitboxPart = "Head",
+
+    Ragebot = false,
 
     ESP = false,
     ESPTeamCheck = true
@@ -122,6 +126,15 @@ ESPGroup:AddToggle("ESPTeamCheck", {
     end
 })
 
+RageGroup:AddToggle("Ragebot", {
+    Text = "Ragebot",
+    Default = false,
+
+    Callback = function(Value)
+        Settings.Ragebot = Value
+    end
+})
+
 SettingsGroup:AddButton("Unload Script", function()
     Library:Unload()
 
@@ -204,6 +217,62 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                     Part.CanCollide = false
                     Part.Massless = true
                 end
+                
+
+if Settings.Ragebot then
+    local Closest = nil
+    local Distance = math.huge
+
+    for _, Player in ipairs(Players:GetPlayers()) do
+        if Player ~= LocalPlayer and Player.Character then
+            local Head = Player.Character:FindFirstChild("Head")
+
+            if Head then
+                local Magnitude = (
+                    LocalPlayer.Character.HumanoidRootPart.Position -
+                    Head.Position
+                ).Magnitude
+
+                if Magnitude < Distance then
+                    Distance = Magnitude
+                    Closest = Player
+                end
+            end
+        end
+    end
+
+    if Closest and Closest.Character then
+        local target = Closest.Character.Head
+
+        local predicted =
+            target.Position +
+            (target.AssemblyLinearVelocity * 0.1)
+
+        local args = {
+            {
+                hitPos = predicted,
+                to = predicted,
+                hitInstance = target,
+                id = 1,
+                mode = "single",
+                hitNormal = Vector3.new(0,1,0),
+
+                effects = {
+                    Frost = 0,
+                    Ricochet = 0,
+                    Barrage = 0
+                },
+
+                ownerUserId = LocalPlayer.UserId,
+                kind = "bullet",
+                isCharacterHit = true,
+                isADS = false
+            }
+        }
+
+        ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
+    end
+end
 
                 if Settings.Triggerbot then
                     local Target = Mouse.Target
