@@ -243,11 +243,17 @@ if Settings.Ragebot then
     end
 
     if Closest and Closest.Character then
-        local target = Closest.Character.Head
+        local target = Closest.Character:FindFirstChild("HumanoidRootPart") or Closest.Character:FindFirstChild("Head")
 
-        local predicted =
-            target.Position +
-            (target.AssemblyLinearVelocity * 0.1)
+        local velocity = target.AssemblyLinearVelocity
+
+local predicted =
+    target.Position +
+    Vector3.new(
+        velocity.X * 0.14,
+        velocity.Y * 0.08,
+        velocity.Z * 0.14
+    )
 
         local args = {
             {
@@ -256,7 +262,7 @@ if Settings.Ragebot then
                 hitInstance = target,
                 id = 1,
                 mode = "single",
-                hitNormal = Vector3.new(0,1,0),
+                hitNormal = (predicted - LocalPlayer.Character.HumanoidRootPart.Position).Unit,
 
                 effects = {
                     Frost = 0,
