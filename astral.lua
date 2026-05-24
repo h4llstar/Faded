@@ -10,6 +10,7 @@ local Camera = workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Window = Library:CreateWindow({
     Title = "Astral | Legit",
