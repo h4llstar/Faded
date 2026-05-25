@@ -286,6 +286,7 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                 
 
 local MatchStarted = false
+local ValidTarget = false
 
 if LocalPlayer:GetAttribute("MatchId") == nil then
 
@@ -300,7 +301,25 @@ else
     MatchStarted = true
 end
 
-if Settings.Ragebot and MatchStarted and tick() - JoinTime > Settings.RagebotDelay then
+for _, Player in ipairs(Players:GetPlayers()) do
+    if Player ~= LocalPlayer
+    and Player.Character
+    and Player.Character:FindFirstChild("HumanoidRootPart") then
+
+        local Humanoid =
+            Player.Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid and Humanoid.Health > 0 then
+            ValidTarget = true
+            break
+        end
+    end
+end
+
+if Settings.Ragebot
+and MatchStarted
+and ValidTarget
+and tick() - JoinTime > Settings.RagebotDelay then
 
     local Closest = nil
     local ClosestDistance = math.huge
