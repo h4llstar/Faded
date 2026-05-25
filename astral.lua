@@ -245,10 +245,7 @@ end
 
 local MatchStarted = false
 
-task.spawn(function()
-    task.wait(Settings.MatchDelay)
-    MatchStarted = true
-end)
+-- RenderStep
 
 getgenv().Connection = RunService.RenderStepped:Connect(function()
     for _, Player in ipairs(Players:GetPlayers()) do
@@ -287,6 +284,10 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                     Part.Massless = true
                 end
                 
+local MatchId =
+    LocalPlayer:GetAttribute("MatchId")
+
+MatchStarted = MatchId ~= nil
 
 if Settings.Ragebot and MatchStarted then
 
