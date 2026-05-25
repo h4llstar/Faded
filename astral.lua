@@ -42,6 +42,9 @@ getgenv().Settings = {
     HitSound = false,
     SelectedHitSound = "Bell",
 
+    FOV = 360,
+    MatchDelay = 5,
+
     ESP = false,
     ESPTeamCheck = true
 }
@@ -240,6 +243,12 @@ local function PlayHitSound()
     end)
 end
 
+local MatchStarted = false
+
+task.spawn(function()
+    task.wait(Settings.MatchDelay)
+    MatchStarted = true
+end)
 
 getgenv().Connection = RunService.RenderStepped:Connect(function()
     for _, Player in ipairs(Players:GetPlayers()) do
@@ -279,48 +288,56 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                 end
                 
 
-if Settings.Ragebot then
+if Settings.Ragebot and MatchStarted then
 
     local Closest = nil
     local ClosestDistance = math.huge
 
     for _, Player in ipairs(Players:GetPlayers()) do
-        if Player ~= LocalPlayer and Player.Character then
+    if Player ~= LocalPlayer and Player.Character then
 
-            local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-            local Root = Player.Character:FindFirstChild("HumanoidRootPart")
+        local Humanoid =
+            Player.Character:FindFirstChildOfClass("Humanoid")
 
-            if Humanoid and Humanoid.Health > 0 and Root then
+        local Root =
+            Player.Character:FindFirstChild("HumanoidRootPart")
 
-                local SameTeam = false
+        -- alive check
+        if Humanoid
+        and Humanoid.Health > 0
+        and Root then
 
-                pcall(function()
-                    SameTeam = Player.Team == LocalPlayer.Team
-                end)
+            local SameTeam = false
 
-                if Settings.TeamCheck and SameTeam then
-                    continue
-                end
+            pcall(function()
+                SameTeam = Player.Team == LocalPlayer.Team
+            end)
 
-                local Position, Visible =
-                    Camera:WorldToViewportPoint(Root.Position)
+            if Settings.TeamCheck and SameTeam then
+                continue
+            end
 
-                if Visible then
+            local Position, Visible =
+                Camera:WorldToViewportPoint(Root.Position)
 
-                    local Distance = (
-                        Vector2.new(Position.X, Position.Y) -
-                        Vector2.new(Mouse.X, Mouse.Y)
-                    ).Magnitude
+            -- FOV check
+            if Visible then
 
-                    if Distance < ClosestDistance
-                    and Distance <= 300 then
-                        ClosestDistance = Distance
-                        Closest = Player
-                    end
+                local Distance = (
+                    Vector2.new(Position.X, Position.Y) -
+                    Vector2.new(Mouse.X, Mouse.Y)
+                ).Magnitude
+
+                -- only target inside FOV
+                if Distance < ClosestDistance
+                and Distance <= 360 then
+                    ClosestDistance = Distance
+                    Closest = Player
                 end
             end
         end
     end
+end
 
     if Closest and Closest.Character then
 
@@ -374,6 +391,11 @@ if Settings.Ragebot then
             }
 
             ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
+             MatchStarted = false
+
+    task.wait(Settings.MatchDelay)
+
+    MatchStarted = true
 
             if Settings.HitSound then
                 PlayHitSound()
