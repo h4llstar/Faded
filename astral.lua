@@ -43,7 +43,6 @@ getgenv().Settings = {
     SelectedHitSound = "Bell",
 
     FOV = 360,
-    MatchDelay = 5,
 
     ESP = false,
     ESPTeamCheck = true
@@ -392,12 +391,6 @@ end
             }
 
             ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
-             MatchStarted = false
-
-    task.wait(Settings.MatchDelay)
-
-    MatchStarted = true
-
             if Settings.HitSound then
                 PlayHitSound()
             end
