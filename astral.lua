@@ -244,7 +244,6 @@ end
 
 local MatchStarted = false
 
--- RenderStep
 
 getgenv().Connection = RunService.RenderStepped:Connect(function()
     for _, Player in ipairs(Players:GetPlayers()) do
@@ -283,16 +282,21 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                     Part.Massless = true
                 end
                 
-local Spectating =
-    LocalPlayer:GetAttribute("Spectating")
 
-local MatchId =
-    LocalPlayer:GetAttribute("MatchId")
+local MatchStarted = false
 
-MatchStarted =
-    MatchId ~= nil
-    and Spectating ~= true
+if LocalPlayer:GetAttribute("MatchId") == nil then
 
+    local Spectating =
+        LocalPlayer:GetAttribute("Spectating")
+
+    MatchStarted =
+        typeof(Spectating) == "number"
+        and Spectating ~= 0
+
+else
+    MatchStarted = true
+end
 
 if Settings.Ragebot and MatchStarted then
 
