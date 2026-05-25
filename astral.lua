@@ -416,7 +416,7 @@ end
                 }
             }
 
-            ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
+            ReplicatedStorage.Remotes.ShootReplicate:FireServer(table.unpack(args))
             if Settings.HitSound then
                 PlayHitSound()
             end
