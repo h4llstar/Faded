@@ -245,7 +245,6 @@ local function PlayHitSound()
     end)
 end
 
-local TriggerDebounce = false
 local MatchStarted = false
 local JoinTime = tick()
 
@@ -289,6 +288,7 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
 
 local MatchStarted = false
 local ValidTarget = false
+
 
 if LocalPlayer:GetAttribute("MatchId") == nil then
 
@@ -431,60 +431,33 @@ end
     end
 end
 
+                if Settings.Triggerbot then
+                    local Target = Mouse.Target
 
-if Settings.Triggerbot and not TriggerDebounce then
+                    if Target and Target == Part then
+                        local TargetPlayer = Players:GetPlayerFromCharacter(Part.Parent)
 
-    local Target = Mouse.Target
+                        if TargetPlayer then
+                            local IsSameTeam = false
 
-    if Target then
+                            pcall(function()
+                                IsSameTeam = TargetPlayer.Team == LocalPlayer.Team
+                            end)
 
-        local Character = Target:FindFirstAncestorOfClass("Model")
+                            if not (Settings.TeamCheck and IsSameTeam) then
+                                task.wait(Settings.TriggerDelay)
 
-        local TargetPlayer =
-            Players:GetPlayerFromCharacter(Character)
-
-        if TargetPlayer
-        and TargetPlayer ~= LocalPlayer then
-
-            local Humanoid =
-                Character:FindFirstChildOfClass("Humanoid")
-
-            local Root =
-                Character:FindFirstChild("HumanoidRootPart")
-
-            if Humanoid
-            and Humanoid.Health > 0
-            and Root then
-
-                local SameTeam = false
-
-                pcall(function()
-                    SameTeam =
-                        TargetPlayer.Team == LocalPlayer.Team
-                end)
-
-                if not (Settings.TeamCheck and SameTeam) then
-
-                    TriggerDebounce = true
-
-                    task.spawn(function()
-
-                        task.wait(Settings.TriggerDelay)
-
-                        mouse1press()
-                        task.wait(0.03)
-                        mouse1release()
-
-                        task.wait(0.1)
-
-                        TriggerDebounce = false
-
-                    end)
+                                mouse1press()
+                                task.wait()
+                                mouse1release()
+                            end
+                        end
+                    end
                 end
             end
         end
     end
-end
+
     for Player, Box in pairs(ESPDrawings) do
         local Character = Player.Character
 
