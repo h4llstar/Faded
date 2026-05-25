@@ -43,6 +43,8 @@ getgenv().Settings = {
     SelectedHitSound = "Bell",
 
     FOV = 360,
+    RagebotDelay = 3,
+
 
     ESP = false,
     ESPTeamCheck = true
@@ -243,7 +245,7 @@ local function PlayHitSound()
 end
 
 local MatchStarted = false
-
+local JoinTime = tick()
 
 getgenv().Connection = RunService.RenderStepped:Connect(function()
     for _, Player in ipairs(Players:GetPlayers()) do
@@ -298,7 +300,7 @@ else
     MatchStarted = true
 end
 
-if Settings.Ragebot and MatchStarted then
+if Settings.Ragebot and MatchStarted and tick() - JoinTime > Settings.RagebotDelay then
 
     local Closest = nil
     local ClosestDistance = math.huge
