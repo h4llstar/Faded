@@ -115,6 +115,7 @@ MainGroup:AddDropdown("HitboxPart", {
     end
 })
 
+
 ESPGroup:AddToggle("ESP", {
     Text = "Streamproof ESP",
     Default = false,
@@ -244,6 +245,7 @@ local function PlayHitSound()
     end)
 end
 
+local TriggerDebounce = false
 local MatchStarted = false
 local JoinTime = tick()
 
@@ -429,33 +431,60 @@ end
     end
 end
 
-                if Settings.Triggerbot then
-                    local Target = Mouse.Target
 
-                    if Target and Target == Part then
-                        local TargetPlayer = Players:GetPlayerFromCharacter(Part.Parent)
+if Settings.Triggerbot and not TriggerDebounce then
 
-                        if TargetPlayer then
-                            local IsSameTeam = false
+    local Target = Mouse.Target
 
-                            pcall(function()
-                                IsSameTeam = TargetPlayer.Team == LocalPlayer.Team
-                            end)
+    if Target then
 
-                            if not (Settings.TeamCheck and IsSameTeam) then
-                                task.wait(Settings.TriggerDelay)
+        local Character = Target:FindFirstAncestorOfClass("Model")
 
-                                mouse1press()
-                                task.wait()
-                                mouse1release()
-                            end
-                        end
-                    end
+        local TargetPlayer =
+            Players:GetPlayerFromCharacter(Character)
+
+        if TargetPlayer
+        and TargetPlayer ~= LocalPlayer then
+
+            local Humanoid =
+                Character:FindFirstChildOfClass("Humanoid")
+
+            local Root =
+                Character:FindFirstChild("HumanoidRootPart")
+
+            if Humanoid
+            and Humanoid.Health > 0
+            and Root then
+
+                local SameTeam = false
+
+                pcall(function()
+                    SameTeam =
+                        TargetPlayer.Team == LocalPlayer.Team
+                end)
+
+                if not (Settings.TeamCheck and SameTeam) then
+
+                    TriggerDebounce = true
+
+                    task.spawn(function()
+
+                        task.wait(Settings.TriggerDelay)
+
+                        mouse1press()
+                        task.wait(0.03)
+                        mouse1release()
+
+                        task.wait(0.1)
+
+                        TriggerDebounce = false
+
+                    end)
                 end
             end
         end
     end
-
+end
     for Player, Box in pairs(ESPDrawings) do
         local Character = Player.Character
 
