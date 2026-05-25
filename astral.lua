@@ -300,6 +300,8 @@ else
     MatchStarted = true
 end
 
+local MAX_DISTANCE = 150
+
 if Settings.Ragebot and MatchStarted and tick() - JoinTime > Settings.RagebotDelay then
 
     local Closest = nil
@@ -334,11 +336,23 @@ if Settings.Ragebot and MatchStarted and tick() - JoinTime > Settings.RagebotDel
 
             -- FOV check
             if Visible then
+    local Distance = (
+        Vector2.new(Position.X, Position.Y) -
+        Vector2.new(Mouse.X, Mouse.Y)
+    ).Magnitude
 
-                local Distance = (
-                    Vector2.new(Position.X, Position.Y) -
-                    Vector2.new(Mouse.X, Mouse.Y)
-                ).Magnitude
+    local StudDistance = (
+        LocalPlayer.Character.HumanoidRootPart.Position -
+        Root.Position
+    ).Magnitude
+
+    if Distance < ClosestDistance
+    and Distance <= 360
+    and StudDistance <= MAX_DISTANCE then
+        ClosestDistance = Distance
+        Closest = Player
+    end
+end
 
                 -- only target inside FOV
                 if Distance < ClosestDistance
