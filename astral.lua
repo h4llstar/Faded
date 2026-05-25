@@ -283,10 +283,16 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                     Part.Massless = true
                 end
                 
+local Spectating =
+    LocalPlayer:GetAttribute("Spectating")
+
 local MatchId =
     LocalPlayer:GetAttribute("MatchId")
 
-MatchStarted = MatchId ~= nil
+MatchStarted =
+    MatchId ~= nil
+    and Spectating ~= true
+
 
 if Settings.Ragebot and MatchStarted then
 
