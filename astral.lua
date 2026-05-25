@@ -39,6 +39,8 @@ getgenv().Settings = {
     HitboxPart = "Head",
 
     Ragebot = false,
+    HitSound = false,
+    SelectedHitSound = "Bell",
 
     ESP = false,
     ESPTeamCheck = true
@@ -136,6 +138,35 @@ RageGroup:AddToggle("Ragebot", {
     end
 })
 
+RageGroup:AddToggle("HitSound", {
+    Text = "Hit Sounds",
+    Default = false,
+
+    Callback = function(Value)
+        Settings.HitSound = Value
+    end
+})
+
+RageGroup:AddDropdown("SelectedHitSound", {
+    Values = {
+        "Bell",
+        "Bubble",
+        "Pop",
+        "Minecraft",
+        "Rust",
+        "Skeet"
+    },
+
+    Default = 1,
+    Multi = false,
+
+    Text = "Hit Sound",
+
+    Callback = function(Value)
+        Settings.SelectedHitSound = Value
+    end
+})
+
 SettingsGroup:AddButton("Unload Script", function()
     Library:Unload()
 
@@ -182,6 +213,34 @@ end)
 
 Players.PlayerRemoving:Connect(RemoveESP)
 
+local HitSounds = {
+    Bell = "rbxassetid://6534947240",
+    Bubble = "rbxassetid://198598793",
+    Pop = "rbxassetid://8745692251",
+    Minecraft = "rbxassetid://4018616850",
+    Rust = "rbxassetid://5043539486",
+    Skeet = "rbxassetid://4753603610"
+}
+
+local function PlayHitSound()
+    if not Settings.HitSound then
+        return
+    end
+
+    local Sound = Instance.new("Sound")
+
+    Sound.SoundId = HitSounds[Settings.SelectedHitSound]
+    Sound.Volume = 2
+    Sound.Parent = game:GetService("SoundService")
+
+    Sound:Play()
+
+    Sound.Ended:Connect(function()
+        Sound:Destroy()
+    end)
+end
+
+
 getgenv().Connection = RunService.RenderStepped:Connect(function()
     for _, Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer and Player.Character then
@@ -221,63 +280,105 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                 
 
 if Settings.Ragebot then
+
     local Closest = nil
-    local Distance = math.huge
+    local ClosestDistance = math.huge
 
     for _, Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer and Player.Character then
-            local Head = Player.Character:FindFirstChild("Head")
 
-            if Head then
-                local Magnitude = (
-                    LocalPlayer.Character.HumanoidRootPart.Position -
-                    Head.Position
-                ).Magnitude
+            local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+            local Root = Player.Character:FindFirstChild("HumanoidRootPart")
 
-                if Magnitude < Distance then
-                    Distance = Magnitude
-                    Closest = Player
+            if Humanoid and Humanoid.Health > 0 and Root then
+
+                local SameTeam = false
+
+                pcall(function()
+                    SameTeam = Player.Team == LocalPlayer.Team
+                end)
+
+                if Settings.TeamCheck and SameTeam then
+                    continue
+                end
+
+                local Position, Visible =
+                    Camera:WorldToViewportPoint(Root.Position)
+
+                if Visible then
+
+                    local Distance = (
+                        Vector2.new(Position.X, Position.Y) -
+                        Vector2.new(Mouse.X, Mouse.Y)
+                    ).Magnitude
+
+                    if Distance < ClosestDistance
+                    and Distance <= 300 then
+                        ClosestDistance = Distance
+                        Closest = Player
+                    end
                 end
             end
         end
     end
 
     if Closest and Closest.Character then
-        local target = Closest.Character:FindFirstChild("HumanoidRootPart") or Closest.Character:FindFirstChild("Head")
 
-        local velocity = target.AssemblyLinearVelocity
+        local target =
+            Closest.Character:FindFirstChild("HumanoidRootPart")
+            or Closest.Character:FindFirstChild("Head")
 
-local predicted =
-    target.Position +
-    Vector3.new(
-        velocity.X * 0.14,
-        velocity.Y * 0.08,
-        velocity.Z * 0.14
-    )
+        if target then
 
-        local args = {
-            {
-                hitPos = predicted,
-                to = predicted,
-                hitInstance = target,
-                id = 1,
-                mode = "single",
-                hitNormal = (predicted - LocalPlayer.Character.HumanoidRootPart.Position).Unit,
+            local velocity = target.AssemblyLinearVelocity
 
-                effects = {
-                    Frost = 0,
-                    Ricochet = 0,
-                    Barrage = 0
-                },
+            local distance = (
+                LocalPlayer.Character.HumanoidRootPart.Position -
+                target.Position
+            ).Magnitude
 
-                ownerUserId = LocalPlayer.UserId,
-                kind = "bullet",
-                isCharacterHit = true,
-                isADS = false
+            local prediction =
+                math.clamp(distance / 350, 0.11, 0.22)
+
+            local predicted =
+                target.Position +
+                (velocity * prediction)
+
+            predicted = predicted + Vector3.new(0, 0.15, 0)
+
+            local args = {
+                {
+                    hitPos = predicted,
+                    to = predicted,
+                    hitInstance = target,
+
+                    id = 1,
+                    mode = "single",
+
+                    hitNormal = (
+                        predicted -
+                        LocalPlayer.Character.HumanoidRootPart.Position
+                    ).Unit,
+
+                    effects = {
+                        Frost = 0,
+                        Ricochet = 0,
+                        Barrage = 0
+                    },
+
+                    ownerUserId = LocalPlayer.UserId,
+                    kind = "bullet",
+                    isCharacterHit = true,
+                    isADS = false
+                }
             }
-        }
 
-        ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
+            ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
+
+            if Settings.HitSound then
+                PlayHitSound()
+            end
+        end
     end
 end
 
