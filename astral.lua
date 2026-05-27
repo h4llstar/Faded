@@ -11,6 +11,8 @@ local Camera = workspace.CurrentCamera
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local IsMobile = UserInputService.TouchEnabled
+local GuiService = game:GetService("GuiService")
+GuiService.TouchControlsEnabled = true
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -19,114 +21,32 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Window = Library:CreateWindow({
     Title = "Astral | Legit",
     Center = true,
-    AutoShow = true
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
 })
 
-local UserInputService =
-    game:GetService("UserInputService")
+if IsMobile then
+    pcall(function()
+        Library.KeybindFrame.Visible = false
+    end)
 
-if UserInputService.TouchEnabled then
-
-    Library.ToggleKeybind = nil
-
-    task.spawn(function()
-
-        task.wait(2)
-
-        local CoreGui =
-            game:GetService("CoreGui")
-
-        local LinoriaGui =
-            CoreGui:FindFirstChild("LinoriaGui")
-
-        if LinoriaGui then
-
-            for _, v in pairs(
-                LinoriaGui:GetDescendants()
-            ) do
-
-                if v:IsA("TextButton")
-                or v:IsA("ImageButton") then
-
-                    v.AutoButtonColor = true
-
-                    pcall(function()
-
-                        v.Size = UDim2.new(
-                            v.Size.X.Scale,
-                            v.Size.X.Offset,
-                            v.Size.Y.Scale,
-                            math.max(
-                                v.Size.Y.Offset,
-                                40
-                            )
-                        )
-                    end)
-                end
-            end
-
-            for _, v in pairs(
-                LinoriaGui:GetDescendants()
-            ) do
-
-                if v:IsA("Frame")
-                and v.Name == "MainFrame" then
-
-                    local Dragging = false
-                    local DragInput
-                    local DragStart
-                    local StartPos
-
-                    v.InputBegan:Connect(function(Input)
-
-                        if Input.UserInputType ==
-                            Enum.UserInputType.Touch then
-
-                            Dragging = true
-                            DragStart = Input.Position
-                            StartPos = v.Position
-
-                            Input.Changed:Connect(function()
-
-                                if Input.UserInputState ==
-                                    Enum.UserInputState.End then
-
-                                    Dragging = false
-                                end
-                            end)
-                        end
-                    end)
-
-                    v.InputChanged:Connect(function(Input)
-
-                        if Input.UserInputType ==
-                            Enum.UserInputType.Touch then
-
-                            DragInput = Input
-                        end
-                    end)
-
-                    UserInputService.InputChanged:Connect(function(Input)
-
-                        if Input == DragInput
-                        and Dragging then
-
-                            local Delta =
-                                Input.Position - DragStart
-
-                            v.Position = UDim2.new(
-                                StartPos.X.Scale,
-                                StartPos.X.Offset + Delta.X,
-                                StartPos.Y.Scale,
-                                StartPos.Y.Offset + Delta.Y
-                            )
-                        end
-                    end)
-                end
-            end
-        end
+    pcall(function()
+        Library.ToggleKeybind = nil
     end)
 end
+pcall(function()
+    local MainFrame = game:GetService("CoreGui"):FindFirstChild("LinoriaGui")
+
+    if MainFrame then
+        for _, v in pairs(MainFrame:GetDescendants()) do
+            if v:IsA("Frame") then
+                v.Active = true
+            end
+        end
+    end
+end)
+
 local Tabs = {
     Legit = Window:AddTab("Legit"),
     Ragebot = Window:AddTab("Ragebot"),
