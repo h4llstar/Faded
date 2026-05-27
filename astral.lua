@@ -8,6 +8,10 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local IsMobile = UserInputService.TouchEnabled
+
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +22,111 @@ local Window = Library:CreateWindow({
     AutoShow = true
 })
 
+local UserInputService =
+    game:GetService("UserInputService")
+
+if UserInputService.TouchEnabled then
+
+    Library.ToggleKeybind = nil
+
+    task.spawn(function()
+
+        task.wait(2)
+
+        local CoreGui =
+            game:GetService("CoreGui")
+
+        local LinoriaGui =
+            CoreGui:FindFirstChild("LinoriaGui")
+
+        if LinoriaGui then
+
+            for _, v in pairs(
+                LinoriaGui:GetDescendants()
+            ) do
+
+                if v:IsA("TextButton")
+                or v:IsA("ImageButton") then
+
+                    v.AutoButtonColor = true
+
+                    pcall(function()
+
+                        v.Size = UDim2.new(
+                            v.Size.X.Scale,
+                            v.Size.X.Offset,
+                            v.Size.Y.Scale,
+                            math.max(
+                                v.Size.Y.Offset,
+                                40
+                            )
+                        )
+                    end)
+                end
+            end
+
+            for _, v in pairs(
+                LinoriaGui:GetDescendants()
+            ) do
+
+                if v:IsA("Frame")
+                and v.Name == "MainFrame" then
+
+                    local Dragging = false
+                    local DragInput
+                    local DragStart
+                    local StartPos
+
+                    v.InputBegan:Connect(function(Input)
+
+                        if Input.UserInputType ==
+                            Enum.UserInputType.Touch then
+
+                            Dragging = true
+                            DragStart = Input.Position
+                            StartPos = v.Position
+
+                            Input.Changed:Connect(function()
+
+                                if Input.UserInputState ==
+                                    Enum.UserInputState.End then
+
+                                    Dragging = false
+                                end
+                            end)
+                        end
+                    end)
+
+                    v.InputChanged:Connect(function(Input)
+
+                        if Input.UserInputType ==
+                            Enum.UserInputType.Touch then
+
+                            DragInput = Input
+                        end
+                    end)
+
+                    UserInputService.InputChanged:Connect(function(Input)
+
+                        if Input == DragInput
+                        and Dragging then
+
+                            local Delta =
+                                Input.Position - DragStart
+
+                            v.Position = UDim2.new(
+                                StartPos.X.Scale,
+                                StartPos.X.Offset + Delta.X,
+                                StartPos.Y.Scale,
+                                StartPos.Y.Offset + Delta.Y
+                            )
+                        end
+                    end)
+                end
+            end
+        end
+    end)
+end
 local Tabs = {
     Legit = Window:AddTab("Legit"),
     Ragebot = Window:AddTab("Ragebot"),
@@ -31,11 +140,11 @@ local SettingsGroup = Tabs.Settings:AddLeftGroupbox("UI Settings")
 
 getgenv().Settings = {
     Triggerbot = false,
-    TriggerDelay = 0.05,
+    TriggerDelay = 0.03,
     TeamCheck = true,
 
     Hitbox = false,
-    HitboxSize = 8,
+    HitboxSize = 4,
     HitboxPart = "Head",
 
     Ragebot = false,
@@ -43,7 +152,7 @@ getgenv().Settings = {
     SelectedHitSound = "Bell",
 
     FOV = 360,
-    RagebotDelay = 3,
+    RagebotDelay = 5,
 
 
     ESP = false,
@@ -93,9 +202,9 @@ MainGroup:AddToggle("Hitbox", {
 
 MainGroup:AddSlider("HitboxSize", {
     Text = "Hitbox Size",
-    Default = 8,
-    Min = 3,
-    Max = 20,
+    Default = 4,
+    Min = 2.5,
+    Max = 10,
     Rounding = 1,
 
     Callback = function(Value)
@@ -280,7 +389,7 @@ getgenv().Connection = RunService.RenderStepped:Connect(function()
                         )
                     end
 
-                    Part.Transparency = 0.5
+                    Part.Transparency = 1
                     Part.CanCollide = false
                     Part.Massless = true
                 end
@@ -432,32 +541,112 @@ end
 end
 
                 if Settings.Triggerbot then
-                    local Target = Mouse.Target
+    local TargetPart = nil
+    
+    if not IsMobile then
+        local Target = Mouse.Target
 
-                    if Target and Target == Part then
-                        local TargetPlayer = Players:GetPlayerFromCharacter(Part.Parent)
+        if Target and Target == Part then
+            TargetPart = Target
+        end
 
-                        if TargetPlayer then
-                            local IsSameTeam = false
+    else
+        local Position, Visible =
+            Camera:WorldToViewportPoint(Part.Position)
 
-                            pcall(function()
-                                IsSameTeam = TargetPlayer.Team == LocalPlayer.Team
-                            end)
+        if Visible then
+            local ScreenCenter = Vector2.new(
+                Camera.ViewportSize.X / 2,
+                Camera.ViewportSize.Y / 2
+            )
 
-                            if not (Settings.TeamCheck and IsSameTeam) then
-                                task.wait(Settings.TriggerDelay)
+            local Distance = (
+                Vector2.new(Position.X, Position.Y) -
+                ScreenCenter
+            ).Magnitude
 
-                                mouse1press()
-                                task.wait()
-                                mouse1release()
-                            end
-                        end
+            if Distance <= 25 then
+                TargetPart = Part
+            end
+        end
+    end
+
+    if TargetPart then
+        local TargetPlayer =
+            Players:GetPlayerFromCharacter(TargetPart.Parent)
+
+        if TargetPlayer then
+            local IsSameTeam = false
+
+            pcall(function()
+                IsSameTeam =
+                    TargetPlayer.Team == LocalPlayer.Team
+            end)
+
+            if not (Settings.TeamCheck and IsSameTeam) then
+
+                local Origin =
+                    Camera.CFrame.Position
+
+                local Direction =
+                    (Part.Position - Origin)
+
+                local Params =
+                    RaycastParams.new()
+
+                Params.FilterType =
+                    Enum.RaycastFilterType.Blacklist
+
+                Params.FilterDescendantsInstances = {
+                    LocalPlayer.Character
+                }
+
+                local Result =
+                    workspace:Raycast(
+                        Origin,
+                        Direction,
+                        Params
+                    )
+
+                if Result
+                and Result.Instance
+                and Result.Instance:IsDescendantOf(
+                    TargetPlayer.Character
+                ) then
+
+                    task.wait(Settings.TriggerDelay)
+
+                    if not IsMobile then
+                        mouse1press()
+                        task.wait()
+                        mouse1release()
+
+                    else
+                        VirtualInputManager:SendMouseButtonEvent(
+                            Camera.ViewportSize.X / 2,
+                            Camera.ViewportSize.Y / 2,
+                            0,
+                            true,
+                            game,
+                            0
+                        )
+
+                        task.wait()
+
+                        VirtualInputManager:SendMouseButtonEvent(
+                            Camera.ViewportSize.X / 2,
+                            Camera.ViewportSize.Y / 2,
+                            0,
+                            false,
+                            game,
+                            0
+                        )
                     end
                 end
             end
         end
     end
-
+end
     for Player, Box in pairs(ESPDrawings) do
         local Character = Player.Character
 
