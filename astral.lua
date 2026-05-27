@@ -357,337 +357,444 @@ end
 local MatchStarted = false
 local JoinTime = tick()
 
-getgenv().Connection = RunService.RenderStepped:Connect(function()
+getgenv().Connection =
+RunService.RenderStepped:Connect(function()
+
     for _, Player in ipairs(Players:GetPlayers()) do
-        if Player ~= LocalPlayer and Player.Character then
+        if Player ~= LocalPlayer
+        and Player.Character then
 
             local SameTeam = false
 
             pcall(function()
-                SameTeam = Player.Team == LocalPlayer.Team
+                SameTeam =
+                    Player.Team == LocalPlayer.Team
             end)
 
-            if Settings.TeamCheck and SameTeam then
+            if Settings.TeamCheck
+            and SameTeam then
                 continue
             end
 
-            local Part = Player.Character:FindFirstChild(Settings.HitboxPart)
+            local Part =
+                Player.Character:FindFirstChild(
+                    Settings.HitboxPart
+                )
 
-            if Part then
-                if Settings.Hitbox then
-                    if Settings.HitboxPart == "Head" then
-                        Part.Size = Vector3.new(
-                            Settings.HitboxSize,
-                            Settings.HitboxSize,
-                            Settings.HitboxSize
+            -- HITBOX
+            if Part and Settings.Hitbox then
+
+                if Settings.HitboxPart == "Head" then
+                    Part.Size = Vector3.new(
+                        Settings.HitboxSize,
+                        Settings.HitboxSize,
+                        Settings.HitboxSize
+                    )
+                else
+                    Part.Size = Vector3.new(
+                        Settings.HitboxSize,
+                        Settings.HitboxSize,
+                        2
+                    )
+                end
+
+                Part.Transparency = 1
+                Part.CanCollide = false
+                Part.Massless = true
+            end
+
+            -- TRIGGERBOT
+            if Settings.Triggerbot and Part then
+
+                local Trigger = false
+
+                if IsMobile then
+
+                    local Position, Visible =
+                        Camera:WorldToViewportPoint(
+                            Part.Position
                         )
-                    else
-                        Part.Size = Vector3.new(
-                            Settings.HitboxSize,
-                            Settings.HitboxSize,
-                            2
-                        )
+
+                    if Visible then
+
+                        local Center =
+                            Vector2.new(
+                                Camera.ViewportSize.X / 2,
+                                Camera.ViewportSize.Y / 2
+                            )
+
+                        local Distance =
+                            (
+                                Vector2.new(
+                                    Position.X,
+                                    Position.Y
+                                ) - Center
+                            ).Magnitude
+
+                        if Distance <= 25 then
+                            Trigger = true
+                        end
                     end
 
-                    Part.Transparency = 1
-                    Part.CanCollide = false
-                    Part.Massless = true
+                else
+                    local Target = Mouse.Target
+
+                    if Target and Target == Part then
+                        Trigger = true
+                    end
                 end
-                
 
-local MatchStarted = false
-local ValidTarget = false
+                if Trigger then
 
+                    local TargetPlayer =
+                        Players:GetPlayerFromCharacter(
+                            Part.Parent
+                        )
 
-if LocalPlayer:GetAttribute("MatchId") == nil then
+                    if TargetPlayer then
 
-    local Spectating =
-        LocalPlayer:GetAttribute("Spectating")
+                        local IsSameTeam = false
 
-    MatchStarted =
-        typeof(Spectating) == "number"
-        and Spectating ~= 0
+                        pcall(function()
+                            IsSameTeam =
+                                TargetPlayer.Team ==
+                                LocalPlayer.Team
+                        end)
 
-else
-    MatchStarted = true
-end
+                        if not (
+                            Settings.TeamCheck
+                            and IsSameTeam
+                        ) then
 
-for _, Player in ipairs(Players:GetPlayers()) do
-    if Player ~= LocalPlayer
-    and Player.Character
-    and Player.Character:FindFirstChild("HumanoidRootPart") then
+                            task.wait(
+                                Settings.TriggerDelay
+                            )
 
-        local Humanoid =
-            Player.Character:FindFirstChildOfClass("Humanoid")
+                            if IsMobile then
 
-        if Humanoid and Humanoid.Health > 0 then
-            ValidTarget = true
-            break
-        end
-    end
-end
+                                VirtualInputManager:
+                                    SendMouseButtonEvent(
+                                        Camera.ViewportSize.X / 2,
+                                        Camera.ViewportSize.Y / 2,
+                                        0,
+                                        true,
+                                        game,
+                                        0
+                                    )
 
-if Settings.Ragebot
-and MatchStarted
-and ValidTarget
-and tick() - JoinTime > Settings.RagebotDelay then
+                                task.wait()
 
-    local Closest = nil
-    local ClosestDistance = math.huge
+                                VirtualInputManager:
+                                    SendMouseButtonEvent(
+                                        Camera.ViewportSize.X / 2,
+                                        Camera.ViewportSize.Y / 2,
+                                        0,
+                                        false,
+                                        game,
+                                        0
+                                    )
 
-    for _, Player in ipairs(Players:GetPlayers()) do
-    if Player ~= LocalPlayer and Player.Character then
-
-        local Humanoid =
-            Player.Character:FindFirstChildOfClass("Humanoid")
-
-        local Root =
-            Player.Character:FindFirstChild("HumanoidRootPart")
-
-        -- alive check
-        if Humanoid
-        and Humanoid.Health > 0
-        and Root then
-
-            local SameTeam = false
-
-            pcall(function()
-                SameTeam = Player.Team == LocalPlayer.Team
-            end)
-
-            if Settings.TeamCheck and SameTeam then
-                continue
-            end
-
-            local Position, Visible =
-                Camera:WorldToViewportPoint(Root.Position)
-
-            -- FOV check
-            if Visible then
-
-                local Distance = (
-                    Vector2.new(Position.X, Position.Y) -
-                    Vector2.new(Mouse.X, Mouse.Y)
-                ).Magnitude
-
-                -- only target inside FOV
-                if Distance < ClosestDistance
-                and Distance <= 360 then
-                    ClosestDistance = Distance
-                    Closest = Player
+                            else
+                                mouse1press()
+                                task.wait()
+                                mouse1release()
+                            end
+                        end
+                    end
                 end
             end
         end
     end
-end
 
-    if Closest and Closest.Character then
+--Ragebot
+ local MatchStarted = false
+    local ValidTarget = false
 
-        local target =
-            Closest.Character:FindFirstChild("HumanoidRootPart")
-            or Closest.Character:FindFirstChild("Head")
+    if LocalPlayer:GetAttribute("MatchId") == nil then
 
-        if target then
+        local Spectating =
+            LocalPlayer:GetAttribute("Spectating")
 
-            local velocity = target.AssemblyLinearVelocity
-
-            local distance = (
-                LocalPlayer.Character.HumanoidRootPart.Position -
-                target.Position
-            ).Magnitude
-
-            local prediction =
-                math.clamp(distance / 350, 0.11, 0.22)
-
-            local predicted =
-                target.Position +
-                (velocity * prediction)
-
-            predicted = predicted + Vector3.new(0, 0.15, 0)
-
-            local args = {
-                {
-                    hitPos = predicted,
-                    to = predicted,
-                    hitInstance = target,
-
-                    id = 1,
-                    mode = "single",
-
-                    hitNormal = (
-                        predicted -
-                        LocalPlayer.Character.HumanoidRootPart.Position
-                    ).Unit,
-
-                    effects = {
-                        Frost = 0,
-                        Ricochet = 0,
-                        Barrage = 0
-                    },
-
-                    ownerUserId = LocalPlayer.UserId,
-                    kind = "bullet",
-                    isCharacterHit = true,
-                    isADS = false
-                }
-            }
-
-            ReplicatedStorage.Remotes.ShootReplicate:FireServer(unpack(args))
-            if Settings.HitSound then
-                PlayHitSound()
-            end
-        end
-    end
-end
-
-                if Settings.Triggerbot then
-    local TargetPart = nil
-    
-    if not IsMobile then
-        local Target = Mouse.Target
-
-        if Target and Target == Part then
-            TargetPart = Target
-        end
+        MatchStarted =
+            typeof(Spectating) == "number"
+            and Spectating ~= 0
 
     else
-        local Position, Visible =
-            Camera:WorldToViewportPoint(Part.Position)
+        MatchStarted = true
+    end
 
-        if Visible then
-            local ScreenCenter = Vector2.new(
-                Camera.ViewportSize.X / 2,
-                Camera.ViewportSize.Y / 2
-            )
+    for _, Player in ipairs(Players:GetPlayers()) do
 
-            local Distance = (
-                Vector2.new(Position.X, Position.Y) -
-                ScreenCenter
-            ).Magnitude
+        if Player ~= LocalPlayer
+        and Player.Character
+        and Player.Character:FindFirstChild(
+            "HumanoidRootPart"
+        ) then
 
-            if Distance <= 25 then
-                TargetPart = Part
+            local Humanoid =
+                Player.Character:
+                FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if Humanoid
+            and Humanoid.Health > 0 then
+
+                ValidTarget = true
+                break
             end
         end
     end
 
-    if TargetPart then
-        local TargetPlayer =
-            Players:GetPlayerFromCharacter(TargetPart.Parent)
+    if Settings.Ragebot
+    and MatchStarted
+    and ValidTarget
+    and tick() - JoinTime >
+        Settings.RagebotDelay then
 
-        if TargetPlayer then
-            local IsSameTeam = false
+        local Closest = nil
+        local ClosestDistance = math.huge
 
-            pcall(function()
-                IsSameTeam =
-                    TargetPlayer.Team == LocalPlayer.Team
-            end)
+        for _, Player in ipairs(
+            Players:GetPlayers()
+        ) do
 
-            if not (Settings.TeamCheck and IsSameTeam) then
+            if Player ~= LocalPlayer
+            and Player.Character then
 
-                local Origin =
-                    Camera.CFrame.Position
-
-                local Direction =
-                    (Part.Position - Origin)
-
-                local Params =
-                    RaycastParams.new()
-
-                Params.FilterType =
-                    Enum.RaycastFilterType.Blacklist
-
-                Params.FilterDescendantsInstances = {
-                    LocalPlayer.Character
-                }
-
-                local Result =
-                    workspace:Raycast(
-                        Origin,
-                        Direction,
-                        Params
+                local Humanoid =
+                    Player.Character:
+                    FindFirstChildOfClass(
+                        "Humanoid"
                     )
 
-                if Result
-                and Result.Instance
-                and Result.Instance:IsDescendantOf(
-                    TargetPlayer.Character
-                ) then
+                local Root =
+                    Player.Character:
+                    FindFirstChild(
+                        "HumanoidRootPart"
+                    )
 
-                    task.wait(Settings.TriggerDelay)
+                if Humanoid
+                and Humanoid.Health > 0
+                and Root then
 
-                    if not IsMobile then
-                        mouse1press()
-                        task.wait()
-                        mouse1release()
+                    local SameTeam = false
 
-                    else
-                        VirtualInputManager:SendMouseButtonEvent(
-                            Camera.ViewportSize.X / 2,
-                            Camera.ViewportSize.Y / 2,
-                            0,
-                            true,
-                            game,
-                            0
+                    pcall(function()
+                        SameTeam =
+                            Player.Team ==
+                            LocalPlayer.Team
+                    end)
+
+                    if Settings.TeamCheck
+                    and SameTeam then
+                        continue
+                    end
+
+                    local Position, Visible =
+                        Camera:
+                        WorldToViewportPoint(
+                            Root.Position
                         )
 
-                        task.wait()
+                    if Visible then
 
-                        VirtualInputManager:SendMouseButtonEvent(
-                            Camera.ViewportSize.X / 2,
-                            Camera.ViewportSize.Y / 2,
-                            0,
-                            false,
-                            game,
-                            0
-                        )
+                        local Distance =
+                            (
+                                Vector2.new(
+                                    Position.X,
+                                    Position.Y
+                                )
+                                -
+                                Vector2.new(
+                                    Camera.ViewportSize.X / 2,
+                                    Camera.ViewportSize.Y / 2
+                                )
+                            ).Magnitude
+
+                        if Distance <
+                            ClosestDistance
+                        and Distance <=
+                            Settings.FOV then
+
+                            ClosestDistance =
+                                Distance
+
+                            Closest = Player
+                        end
                     end
                 end
             end
         end
+
+        if Closest
+        and Closest.Character then
+
+            local Target =
+                Closest.Character:
+                FindFirstChild(
+                    "HumanoidRootPart"
+                )
+                or
+                Closest.Character:
+                FindFirstChild("Head")
+
+            if Target then
+
+                local Velocity =
+                    Target.AssemblyLinearVelocity
+
+                local Distance =
+                    (
+                        LocalPlayer.Character
+                        .HumanoidRootPart
+                        .Position
+                        -
+                        Target.Position
+                    ).Magnitude
+
+                local Prediction =
+                    math.clamp(
+                        Distance / 350,
+                        0.11,
+                        0.22
+                    )
+
+                local Predicted =
+                    Target.Position +
+                    (Velocity * Prediction)
+
+                Predicted =
+                    Predicted +
+                    Vector3.new(0, 0.15, 0)
+
+                local Args = {
+                    {
+                        hitPos = Predicted,
+                        to = Predicted,
+                        hitInstance = Target,
+
+                        id = 1,
+                        mode = "single",
+
+                        hitNormal = (
+                            Predicted -
+                            LocalPlayer.Character
+                            .HumanoidRootPart
+                            .Position
+                        ).Unit,
+
+                        effects = {
+                            Frost = 0,
+                            Ricochet = 0,
+                            Barrage = 0
+                        },
+
+                        ownerUserId =
+                            LocalPlayer.UserId,
+
+                        kind = "bullet",
+                        isCharacterHit = true,
+                        isADS = false
+                    }
+                }
+
+                ReplicatedStorage
+                    .Remotes
+                    .ShootReplicate
+                    :FireServer(
+                        unpack(Args)
+                    )
+
+                if Settings.HitSound then
+                    PlayHitSound()
+                end
+            end
+        end
     end
-end
+
+    -- ESP
     for Player, Box in pairs(ESPDrawings) do
+
         local Character = Player.Character
 
         if Character then
-            local Root = Character:FindFirstChild("HumanoidRootPart")
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
-            if Root and Humanoid and Humanoid.Health > 0 then
+            local Root =
+                Character:FindFirstChild(
+                    "HumanoidRootPart"
+                )
+
+            local Humanoid =
+                Character:FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if Root
+            and Humanoid
+            and Humanoid.Health > 0 then
 
                 local SameTeam = false
 
                 pcall(function()
-                    SameTeam = Player.Team == LocalPlayer.Team
+                    SameTeam =
+                        Player.Team == LocalPlayer.Team
                 end)
 
-                if Settings.ESPTeamCheck and SameTeam then
+                if Settings.ESPTeamCheck
+                and SameTeam then
+
                     Box.Visible = false
                     continue
                 end
 
-                local Position, Visible = Camera:WorldToViewportPoint(Root.Position)
-
-                if Visible and Settings.ESP then
-                    local Size = (Camera:WorldToViewportPoint(Root.Position - Vector3.new(0,3,0)).Y -
-                                 Camera:WorldToViewportPoint(Root.Position + Vector3.new(0,2.6,0)).Y)
-
-                    local Width = math.abs(Size / 2)
-
-                    Box.Size = Vector2.new(Width, math.abs(Size))
-                    Box.Position = Vector2.new(
-                        Position.X - Width / 2,
-                        Position.Y - math.abs(Size) / 2
+                local Position, Visible =
+                    Camera:WorldToViewportPoint(
+                        Root.Position
                     )
 
+                if Visible
+                and Settings.ESP then
+
+                    local Size =
+                        (
+                            Camera:WorldToViewportPoint(
+                                Root.Position -
+                                Vector3.new(0,3,0)
+                            ).Y
+                            -
+                            Camera:WorldToViewportPoint(
+                                Root.Position +
+                                Vector3.new(0,2.6,0)
+                            ).Y
+                        )
+
+                    local Width =
+                        math.abs(Size / 2)
+
+                    Box.Size =
+                        Vector2.new(
+                            Width,
+                            math.abs(Size)
+                        )
+
+                    Box.Position =
+                        Vector2.new(
+                            Position.X - Width / 2,
+                            Position.Y -
+                            math.abs(Size) / 2
+                        )
+
                     Box.Visible = true
+
                 else
                     Box.Visible = false
                 end
+
             else
                 Box.Visible = false
             end
+
         else
             Box.Visible = false
         end
