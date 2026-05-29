@@ -155,8 +155,9 @@ ESPGroup:AddToggle("ESP", {
     end
 })
 
-ESPGroup:AddLabel("ESP Color"):AddColorPicker("ESPColorPicker", {
+ESPGroup:AddColorPicker("ESPColorPicker", {
     Default = Color3.fromRGB(255,255,255),
+    Title = "ESP Color",
 
     Callback = function(Value)
         Settings.ESPColor = Value
