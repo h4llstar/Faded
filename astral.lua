@@ -155,19 +155,21 @@ ESPGroup:AddToggle("ESP", {
     end
 })
 
-ESPGroup:AddColorPicker("ESPColorPicker", {
+local ESPColorPicker = ESPGroup:AddLabel("ESP Color")
+
+ESPColorPicker:AddColorPicker("ColorPicker", {
     Default = Color3.fromRGB(255,255,255),
-    Title = "ESP Color",
 
     Callback = function(Value)
         Settings.ESPColor = Value
 
-        for _, Box in pairs(ESPDrawings) do
-            Box.Color = Value
+        for _, Box in pairs(getgenv().ESPDrawings or {}) do
+            if Box then
+                Box.Color = Value
+            end
         end
     end
 })
-
 ESPGroup:AddToggle("ESPTeamCheck", {
     Text = "ESP Team Check",
     Default = true,
@@ -233,7 +235,7 @@ local function CreateESP(Player)
     local Box = Drawing.new("Square")
 
     Box.Visible = false
-    Box.Color = Settings.ESPColor
+    Box.Color = Settings.ESPColor or Color3.fromRGB(255,255,255)
     Box.Thickness = 1
     Box.Filled = false
 
