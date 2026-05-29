@@ -76,7 +76,8 @@ getgenv().Settings = {
 
 
     ESP = false,
-    ESPTeamCheck = true
+    ESPTeamCheck = true,
+    ESPColor = Color3.fromRGB(255, 255, 255)
 }
 
 MainGroup:AddToggle("Triggerbot", {
@@ -154,6 +155,18 @@ ESPGroup:AddToggle("ESP", {
     end
 })
 
+ESPGroup:AddLabel("ESP Color"):AddColorPicker("ESPColorPicker", {
+    Default = Color3.fromRGB(255,255,255),
+
+    Callback = function(Value)
+        Settings.ESPColor = Value
+
+        for _, Box in pairs(ESPDrawings) do
+            Box.Color = Value
+        end
+    end
+})
+
 ESPGroup:AddToggle("ESPTeamCheck", {
     Text = "ESP Team Check",
     Default = true,
@@ -219,7 +232,7 @@ local function CreateESP(Player)
     local Box = Drawing.new("Square")
 
     Box.Visible = false
-    Box.Color = Color3.fromRGB(255,255,255)
+    Box.Color = Settings.ESPColor
     Box.Thickness = 1
     Box.Filled = false
 
