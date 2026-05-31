@@ -442,30 +442,21 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
---Ragebot
- local MatchStarted = false
-    local ValidTarget = false
+-- RAGEBOT
+local LastShot = 0
 
-    if LocalPlayer:GetAttribute("MatchId") == nil then
+if Settings.Ragebot
+and tick() - LastShot > 0.08 then
 
-        local Spectating =
-            LocalPlayer:GetAttribute("Spectating")
+    local Closest = nil
+    local ClosestDistance = math.huge
 
-        MatchStarted =
-            typeof(Spectating) == "number"
-            and Spectating ~= 0
-
-    else
-        MatchStarted = true
-    end
-
-    for _, Player in ipairs(Players:GetPlayers()) do
+    for _, Player in ipairs(
+        Players:GetPlayers()
+    ) do
 
         if Player ~= LocalPlayer
-        and Player.Character
-        and Player.Character:FindFirstChild(
-            "HumanoidRootPart"
-        ) then
+        and Player.Character then
 
             local Humanoid =
                 Player.Character:
@@ -473,181 +464,152 @@ RunService.RenderStepped:Connect(function()
                     "Humanoid"
                 )
 
-            if Humanoid
-            and Humanoid.Health > 0 then
-
-                ValidTarget = true
-                break
-            end
-        end
-    end
-
-    if Settings.Ragebot
-    and MatchStarted
-    and ValidTarget
-    and tick() - JoinTime >
-        Settings.RagebotDelay then
-
-        local Closest = nil
-        local ClosestDistance = math.huge
-
-        for _, Player in ipairs(
-            Players:GetPlayers()
-        ) do
-
-            if Player ~= LocalPlayer
-            and Player.Character then
-
-                local Humanoid =
-                    Player.Character:
-                    FindFirstChildOfClass(
-                        "Humanoid"
-                    )
-
-                local Root =
-                    Player.Character:
-                    FindFirstChild(
-                        "HumanoidRootPart"
-                    )
-
-                if Humanoid
-                and Humanoid.Health > 0
-                and Root then
-
-                    local SameTeam = false
-
-                    pcall(function()
-                        SameTeam =
-                            Player.Team ==
-                            LocalPlayer.Team
-                    end)
-
-                    if Settings.TeamCheck
-                    and SameTeam then
-                        continue
-                    end
-
-                    local Position, Visible =
-                        Camera:
-                        WorldToViewportPoint(
-                            Root.Position
-                        )
-
-                    if Visible then
-
-                        local Distance =
-                            (
-                                Vector2.new(
-                                    Position.X,
-                                    Position.Y
-                                )
-                                -
-                                Vector2.new(
-                                    Camera.ViewportSize.X / 2,
-                                    Camera.ViewportSize.Y / 2
-                                )
-                            ).Magnitude
-
-                        if Distance <
-                            ClosestDistance
-                        and Distance <=
-                            Settings.FOV then
-
-                            ClosestDistance =
-                                Distance
-
-                            Closest = Player
-                        end
-                    end
-                end
-            end
-        end
-
-        if Closest
-        and Closest.Character then
-
-            local Target =
-                Closest.Character:
+            local Root =
+                Player.Character:
                 FindFirstChild(
                     "HumanoidRootPart"
                 )
-                or
-                Closest.Character:
+
+            local Head =
+                Player.Character:
                 FindFirstChild("Head")
 
-            if Target then
+            if Humanoid
+            and Humanoid.Health > 0
+            and Root
+            and Head then
 
-                local Velocity =
-                    Target.AssemblyLinearVelocity
+                local SameTeam = false
 
-                local Distance =
-                    (
-                        LocalPlayer.Character
-                        .HumanoidRootPart
-                        .Position
-                        -
-                        Target.Position
-                    ).Magnitude
+                pcall(function()
+                    SameTeam =
+                        Player.Team ==
+                        LocalPlayer.Team
+                end)
 
-                local Prediction =
-                    math.clamp(
-                        Distance / 350,
-                        0.11,
-                        0.22
+                if Settings.TeamCheck
+                and SameTeam then
+                    continue
+                end
+
+                local Position, Visible =
+                    Camera:WorldToViewportPoint(
+                        Head.Position
                     )
 
-                local Predicted =
-                    Target.Position +
-                    (Velocity * Prediction)
+                if Visible then
 
-                Predicted =
-                    Predicted +
-                    Vector3.new(0, 0.15, 0)
+                    local Distance =
+                        (
+                            Vector2.new(
+                                Position.X,
+                                Position.Y
+                            )
+                            -
+                            Vector2.new(
+                                Camera.ViewportSize.X / 2,
+                                Camera.ViewportSize.Y / 2
+                            )
+                        ).Magnitude
 
-                local Args = {
-                    {
-                        hitPos = Predicted,
-                        to = Predicted,
-                        hitInstance = Target,
+                    if Distance <
+                        ClosestDistance
+                    and Distance <=
+                        Settings.FOV then
 
-                        id = 1,
-                        mode = "single",
+                        ClosestDistance =
+                            Distance
 
-                        hitNormal = (
-                            Predicted -
-                            LocalPlayer.Character
-                            .HumanoidRootPart
-                            .Position
-                        ).Unit,
-
-                        effects = {
-                            Frost = 0,
-                            Ricochet = 0,
-                            Barrage = 0
-                        },
-
-                        ownerUserId =
-                            LocalPlayer.UserId,
-
-                        kind = "bullet",
-                        isCharacterHit = true,
-                        isADS = false
-                    }
-                }
-
-                ReplicatedStorage
-                    .Remotes
-                    .ShootReplicate
-                    :FireServer(
-                        unpack(Args)
-                    )
-
-                if Settings.HitSound then
-                    PlayHitSound()
+                        Closest = Player
+                    end
                 end
             end
         end
     end
+
+    if Closest
+    and Closest.Character then
+
+        local Target =
+            Closest.Character:
+            FindFirstChild("Head")
+            or
+            Closest.Character:
+            FindFirstChild(
+                "HumanoidRootPart"
+            )
+
+        if Target then
+
+            local Velocity =
+                Target.AssemblyLinearVelocity
+
+            local Distance =
+                (
+                    LocalPlayer.Character
+                    .HumanoidRootPart.Position
+                    -
+                    Target.Position
+                ).Magnitude
+
+            local Prediction =
+                math.clamp(
+                    Distance / 400,
+                    0.09,
+                    0.18
+                )
+
+            local Predicted =
+                Target.Position +
+                (Velocity * Prediction)
+
+            local Args = {
+                {
+                    hitPos = Predicted,
+                    to = Predicted,
+                    hitInstance = Target,
+
+                    id = 1,
+                    mode = "single",
+
+                    hitNormal = (
+                        Predicted -
+                        LocalPlayer.Character
+                        .HumanoidRootPart
+                        .Position
+                    ).Unit,
+
+                    effects = {
+                        Frost = 0,
+                        Ricochet = 0,
+                        Barrage = 0
+                    },
+
+                    ownerUserId =
+                        LocalPlayer.UserId,
+
+                    kind = "bullet",
+                    isCharacterHit = true,
+                    isADS = false
+                }
+            }
+
+            ReplicatedStorage
+                .Remotes
+                .ShootReplicate
+                :FireServer(
+                    unpack(Args)
+                )
+
+            LastShot = tick()
+
+            if Settings.HitSound then
+                PlayHitSound()
+            end
+        end
+    end
+end
+
 
     -- ESP
     for Player, Box in pairs(ESPDrawings) do
